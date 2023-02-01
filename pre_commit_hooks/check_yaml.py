@@ -6,9 +6,12 @@ from typing import Generator
 from typing import NamedTuple
 from typing import Sequence
 
-import ruamel.yaml
+import yaml
 
-yaml = ruamel.yaml.YAML(typ='safe')
+try:
+    from yaml.cyaml import CSafeLoader as Loader
+except ImportError:  # pragma: no cover (no libyaml-dev / pypy)
+    Loader = yaml.SafeLoader
 
 
 def _exhaust(gen: Generator[str, None, None]) -> None:
@@ -60,9 +63,8 @@ def main(argv: Sequence[str] | None = None) -> int:
     retval = 0
     for filename in args.filenames:
         try:
-            with open(filename, encoding='UTF-8') as f:
-                load_fn(f)
-        except ruamel.yaml.YAMLError as exc:
+            load_fn(open(filename), Loader=Loader)
+        except yaml.YAMLError as exc:
             print(exc)
             retval = 1
     return retval
